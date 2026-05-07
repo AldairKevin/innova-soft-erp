@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 
 export async function POST() {
-  const res = NextResponse.json({ ok: true });
+  const response = NextResponse.json({ message: "Logout exitoso" });
 
-  res.cookies.set("token", "", {
+  // 🔥 eliminar cookie
+  response.cookies.set("token", "", {
+    httpOnly: true,
+    expires: new Date(0), // 👈 esto la borra
     path: "/",
-    expires: new Date(0),
   });
 
-  return res;
+  return response;
 }

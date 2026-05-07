@@ -14,6 +14,7 @@ model Product {
   stock       Int
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
+
   saleDetails SaleDetail[]
 }
 
@@ -22,17 +23,20 @@ model Sale {
   customerName String
   total        Decimal
   createdAt    DateTime     @default(now())
+
   details      SaleDetail[]
 }
 
 model SaleDetail {
   id        Int     @id @default(autoincrement())
+
   saleId    Int
   productId Int
+
   quantity  Int
   price     Decimal
 
-  sale      Sale    @relation(fields: [saleId], references: [id])
+  sale      Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
   product   Product @relation(fields: [productId], references: [id])
 }
 

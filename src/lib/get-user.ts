@@ -1,34 +1,21 @@
 import { cookies } from "next/headers";
-
 import jwt from "jsonwebtoken";
+import { User } from "@/types/user";
 
-const JWT_SECRET = process.env.JWT_SECRET!;
+export async function getUser(): Promise<User | null> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("token")?.value;
 
-export async function getUser() {
+  if (!token) return null;
 
   try {
-
-    const cookieStore = await cookies();
-
-    const token = cookieStore.get("token")?.value;
-
-    if (!token) {
-
-      return null;
-
-    }
-
-    const user = jwt.verify(
+    const decoded = jwt.verify(
       token,
-      JWT_SECRET
-    );
+      process.env.JWT_SECRET!
+    ) as User;
 
-    return user;
-
-  } catch (error) {
-
+    return decoded;
+  } catch {
     return null;
-
   }
-
 }
