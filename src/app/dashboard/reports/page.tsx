@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 
 import {
-  ArrowLeft,
   DollarSign,
   ShoppingCart,
   Package,
@@ -12,19 +11,20 @@ import {
   RefreshCcw,
   ReceiptText,
   AlertCircle,
+  Sparkles,
+  ShieldCheck,
+  Activity,
+  ChevronRight,
 } from "lucide-react";
 
 export default function ReportsPage() {
-
   const [sales, setSales] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   // CARGAR VENTAS
   const loadSales = async () => {
-
     try {
-
       setLoading(true);
       setError("");
 
@@ -32,27 +32,23 @@ export default function ReportsPage() {
         cache: "no-store",
       });
 
-      // VALIDAR RESPUESTA
       if (!res.ok) {
-
-        throw new Error("No se pudieron cargar las ventas");
-
+        throw new Error(
+          "No se pudieron cargar las ventas"
+        );
       }
 
       const data = await res.json();
 
       setSales(Array.isArray(data) ? data : []);
-
     } catch (err: any) {
-
       console.error(err);
 
-      setError(err.message || "Ocurrió un error");
-
+      setError(
+        err.message || "Ocurrió un error"
+      );
     } finally {
-
       setLoading(false);
-
     }
   };
 
@@ -60,83 +56,122 @@ export default function ReportsPage() {
     loadSales();
   }, []);
 
-  // INGRESOS TOTALES
+  // KPIs
   const totalRevenue = sales.reduce(
-    (acc, sale) => acc + Number(sale.total || 0),
+    (acc, sale) =>
+      acc + Number(sale.total || 0),
     0
   );
 
-  // TOTAL VENTAS
   const totalSales = sales.length;
 
-  // PRODUCTOS VENDIDOS
-  const totalProductsSold = sales.reduce((acc, sale) => {
+  const totalProductsSold = sales.reduce(
+    (acc, sale) => {
+      const totalItems = (
+        sale.details || []
+      ).reduce(
+        (sum: number, item: any) =>
+          sum +
+          Number(item.quantity || 0),
+        0
+      );
 
-    const totalItems = (sale.details || []).reduce(
-      (sum: number, item: any) => sum + Number(item.quantity || 0),
-      0
-    );
+      return acc + totalItems;
+    },
+    0
+  );
 
-    return acc + totalItems;
-
-  }, 0);
-
-  // TICKET PROMEDIO
   const averageSale =
-    totalSales > 0 ? totalRevenue / totalSales : 0;
+    totalSales > 0
+      ? totalRevenue / totalSales
+      : 0;
 
   return (
-    <div className="min-h-screen bg-slate-50 p-8 flex flex-col gap-8">
+    <div className="space-y-8">
 
-      {/* HEADER */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
+      {/* HERO */}
+      <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-slate-900 via-slate-950 to-black p-8 shadow-2xl">
 
-        <div>
+        {/* FX */}
+        <div className="absolute top-0 right-0 h-72 w-72 rounded-full bg-blue-500/10 blur-3xl" />
 
-          <h1 className="text-4xl font-black text-slate-800">
-            Reporte Empresarial
-          </h1>
+        <div className="absolute bottom-0 left-0 h-64 w-64 rounded-full bg-cyan-500/10 blur-3xl" />
 
-          <p className="text-slate-500 mt-1 font-medium">
-            Panel profesional de ventas y rendimiento comercial
-          </p>
+        <div className="relative z-10 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-8">
+
+          {/* LEFT */}
+          <div>
+
+            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/20 bg-cyan-500/10 px-4 py-2 text-sm text-cyan-400 mb-6">
+              <Sparkles size={16} />
+              Analítica empresarial avanzada
+            </div>
+
+            <h1 className="text-5xl font-black text-white tracking-tight leading-tight">
+              Reportes &
+              <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+                {" "}
+                Estadísticas
+              </span>
+            </h1>
+
+            <p className="text-slate-400 mt-4 text-lg max-w-2xl">
+              Monitorea ventas, ingresos y
+              rendimiento comercial en tiempo
+              real.
+            </p>
+
+          </div>
+
+          {/* RIGHT */}
+          <div className="flex items-center gap-4">
+
+            <button
+              onClick={loadSales}
+              className="h-14 w-14 rounded-2xl border border-white/10 bg-white/5 flex items-center justify-center hover:bg-white/10 transition-all"
+            >
+
+              <RefreshCcw
+                size={20}
+                className={`text-blue-400 ${
+                  loading
+                    ? "animate-spin"
+                    : ""
+                }`}
+              />
+
+            </button>
+
+            <div className="rounded-3xl border border-emerald-500/10 bg-emerald-500/5 px-6 py-4">
+
+              <div className="flex items-center gap-2">
+
+                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+
+                <span className="text-sm text-emerald-400 font-semibold">
+                  Sistema operativo
+                </span>
+
+              </div>
+
+              <p className="text-xs text-slate-400 mt-1">
+                Datos sincronizados en vivo
+              </p>
+
+            </div>
+
+          </div>
 
         </div>
 
-        <div className="flex items-center gap-3">
-
-          <button
-            onClick={loadSales}
-            className="bg-white border shadow-sm rounded-2xl p-3 hover:bg-slate-100 transition"
-          >
-
-            <RefreshCcw
-              size={20}
-              className={loading ? "animate-spin text-blue-600" : "text-blue-600"}
-            />
-
-          </button>
-
-          <Link
-            href="/dashboard"
-            className="bg-white border shadow-sm px-5 py-3 rounded-2xl font-bold text-slate-700 flex items-center gap-2 hover:bg-slate-100 transition"
-          >
-
-            <ArrowLeft size={18} />
-
-            Regresar
-
-          </Link>
-
-        </div>
       </div>
 
       {/* ERROR */}
       {error && (
 
-        <div className="bg-red-50 border border-red-200 text-red-600 p-4 rounded-2xl flex items-center gap-3">
+        <div className="rounded-3xl border border-red-500/10 bg-red-500/5 p-5 flex items-center gap-4 text-red-400">
 
-          <AlertCircle size={20} />
+          <AlertCircle size={22} />
 
           <span className="font-semibold">
             {error}
@@ -146,194 +181,217 @@ export default function ReportsPage() {
 
       )}
 
-      {/* KPIs */}
+      {/* KPI */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
 
         {/* INGRESOS */}
-        <div className="bg-white rounded-3xl p-6 border shadow-sm hover:shadow-md transition">
+        <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-slate-900 to-slate-950 p-6 shadow-2xl">
 
-          <div className="flex items-center justify-between mb-5">
+          <div className="absolute top-0 right-0 h-24 w-24 rounded-full bg-emerald-500/10 blur-2xl" />
 
-            <div>
+          <div className="relative z-10">
 
-              <p className="text-xs uppercase tracking-widest text-slate-400 font-black">
-                Ingresos Totales
-              </p>
+            <div className="flex items-center justify-between">
 
-              <h2 className="text-4xl font-black text-emerald-600 mt-2">
-                S/ {totalRevenue.toFixed(2)}
-              </h2>
+              <div>
+
+                <p className="text-xs uppercase tracking-[3px] text-slate-500 font-black">
+                  Ingresos
+                </p>
+
+                <h2 className="text-4xl font-black text-white mt-4">
+                  S/{" "}
+                  {totalRevenue.toFixed(2)}
+                </h2>
+
+              </div>
+
+              <div className="h-16 w-16 rounded-3xl bg-emerald-500/10 flex items-center justify-center">
+                <DollarSign
+                  size={30}
+                  className="text-emerald-400"
+                />
+              </div>
 
             </div>
 
-            <div className="bg-emerald-100 p-4 rounded-2xl">
-
-              <DollarSign
-                className="text-emerald-600"
-                size={30}
-              />
-
+            <div className="mt-6 inline-flex items-center gap-2 text-sm text-emerald-400 font-semibold">
+              <TrendingUp size={15} />
+              Rendimiento positivo
             </div>
-
-          </div>
-
-          <div className="flex items-center gap-2 text-sm text-emerald-600 font-bold">
-
-            <TrendingUp size={16} />
-
-            Rendimiento positivo
 
           </div>
 
         </div>
 
         {/* VENTAS */}
-        <div className="bg-white rounded-3xl p-6 border shadow-sm hover:shadow-md transition">
+        <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-slate-900 to-slate-950 p-6 shadow-2xl">
 
-          <div className="flex items-center justify-between mb-5">
+          <div className="absolute top-0 right-0 h-24 w-24 rounded-full bg-blue-500/10 blur-2xl" />
 
-            <div>
+          <div className="relative z-10">
 
-              <p className="text-xs uppercase tracking-widest text-slate-400 font-black">
-                Ventas Registradas
-              </p>
+            <div className="flex items-center justify-between">
 
-              <h2 className="text-4xl font-black text-blue-700 mt-2">
-                {totalSales}
-              </h2>
+              <div>
 
-            </div>
+                <p className="text-xs uppercase tracking-[3px] text-slate-500 font-black">
+                  Ventas
+                </p>
 
-            <div className="bg-blue-100 p-4 rounded-2xl">
+                <h2 className="text-5xl font-black text-white mt-4">
+                  {totalSales}
+                </h2>
 
-              <ShoppingCart
-                className="text-blue-700"
-                size={30}
-              />
+              </div>
 
-            </div>
-
-          </div>
-
-          <p className="text-sm text-slate-500 font-medium">
-            Operaciones realizadas
-          </p>
-
-        </div>
-
-        {/* PRODUCTOS */}
-        <div className="bg-white rounded-3xl p-6 border shadow-sm hover:shadow-md transition">
-
-          <div className="flex items-center justify-between mb-5">
-
-            <div>
-
-              <p className="text-xs uppercase tracking-widest text-slate-400 font-black">
-                Productos Vendidos
-              </p>
-
-              <h2 className="text-4xl font-black text-purple-700 mt-2">
-                {totalProductsSold}
-              </h2>
+              <div className="h-16 w-16 rounded-3xl bg-blue-500/10 flex items-center justify-center">
+                <ShoppingCart
+                  size={30}
+                  className="text-blue-400"
+                />
+              </div>
 
             </div>
 
-            <div className="bg-purple-100 p-4 rounded-2xl">
-
-              <Package
-                className="text-purple-700"
-                size={30}
-              />
-
-            </div>
-
-          </div>
-
-          <p className="text-sm text-slate-500 font-medium">
-            Unidades despachadas
-          </p>
-
-        </div>
-
-        {/* PROMEDIO */}
-        <div className="bg-white rounded-3xl p-6 border shadow-sm hover:shadow-md transition">
-
-          <div className="flex items-center justify-between mb-5">
-
-            <div>
-
-              <p className="text-xs uppercase tracking-widest text-slate-400 font-black">
-                Ticket Promedio
-              </p>
-
-              <h2 className="text-4xl font-black text-orange-600 mt-2">
-                S/ {averageSale.toFixed(2)}
-              </h2>
-
-            </div>
-
-            <div className="bg-orange-100 p-4 rounded-2xl">
-
-              <ReceiptText
-                className="text-orange-600"
-                size={30}
-              />
-
-            </div>
-
-          </div>
-
-          <p className="text-sm text-slate-500 font-medium">
-            Promedio por cliente
-          </p>
-
-        </div>
-      </div>
-
-      {/* TABLA */}
-      <div className="bg-white rounded-3xl border shadow-sm overflow-hidden">
-
-        <div className="p-6 border-b flex items-center justify-between">
-
-          <div>
-
-            <h2 className="text-xl font-black text-slate-800">
-              Historial de Ventas
-            </h2>
-
-            <p className="text-sm text-slate-500 mt-1">
-              Seguimiento detallado de operaciones comerciales
+            <p className="text-slate-400 text-sm mt-6">
+              Operaciones registradas
             </p>
 
           </div>
 
-          <div className="bg-blue-50 text-blue-700 px-4 py-2 rounded-xl font-bold text-sm">
-            {sales.length} registros
+        </div>
+
+        {/* PRODUCTOS */}
+        <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-slate-900 to-slate-950 p-6 shadow-2xl">
+
+          <div className="absolute top-0 right-0 h-24 w-24 rounded-full bg-purple-500/10 blur-2xl" />
+
+          <div className="relative z-10">
+
+            <div className="flex items-center justify-between">
+
+              <div>
+
+                <p className="text-xs uppercase tracking-[3px] text-slate-500 font-black">
+                  Productos
+                </p>
+
+                <h2 className="text-5xl font-black text-white mt-4">
+                  {totalProductsSold}
+                </h2>
+
+              </div>
+
+              <div className="h-16 w-16 rounded-3xl bg-purple-500/10 flex items-center justify-center">
+                <Package
+                  size={30}
+                  className="text-purple-400"
+                />
+              </div>
+
+            </div>
+
+            <p className="text-slate-400 text-sm mt-6">
+              Productos vendidos
+            </p>
+
           </div>
 
         </div>
 
+        {/* TICKET */}
+        <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-slate-900 to-slate-950 p-6 shadow-2xl">
+
+          <div className="absolute top-0 right-0 h-24 w-24 rounded-full bg-orange-500/10 blur-2xl" />
+
+          <div className="relative z-10">
+
+            <div className="flex items-center justify-between">
+
+              <div>
+
+                <p className="text-xs uppercase tracking-[3px] text-slate-500 font-black">
+                  Ticket Medio
+                </p>
+
+                <h2 className="text-4xl font-black text-white mt-4">
+                  S/{" "}
+                  {averageSale.toFixed(2)}
+                </h2>
+
+              </div>
+
+              <div className="h-16 w-16 rounded-3xl bg-orange-500/10 flex items-center justify-center">
+                <ReceiptText
+                  size={30}
+                  className="text-orange-400"
+                />
+              </div>
+
+            </div>
+
+            <p className="text-slate-400 text-sm mt-6">
+              Promedio por venta
+            </p>
+
+          </div>
+
+        </div>
+
+      </div>
+
+      {/* TABLA */}
+      <div className="rounded-[2rem] border border-white/10 bg-slate-900/70 backdrop-blur-xl shadow-2xl overflow-hidden">
+
+        {/* TOP */}
+        <div className="border-b border-white/5 p-7 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+
+          <div>
+
+            <h2 className="text-3xl font-black text-white">
+              Historial de Ventas
+            </h2>
+
+            <p className="text-slate-400 mt-1">
+              Seguimiento detallado de
+              operaciones comerciales
+            </p>
+
+          </div>
+
+          <div className="inline-flex items-center gap-2 rounded-2xl border border-blue-500/10 bg-blue-500/5 px-5 py-3 text-blue-400 font-semibold text-sm">
+
+            <Activity size={16} />
+
+            {sales.length} registros
+
+          </div>
+
+        </div>
+
+        {/* TABLE */}
         <div className="overflow-x-auto">
 
           <table className="w-full">
 
-            <thead className="bg-slate-50">
+            <thead className="bg-slate-950/50 border-b border-white/5">
 
               <tr>
 
-                <th className="p-5 text-left text-xs uppercase tracking-widest text-slate-400 font-black">
+                <th className="p-5 text-left text-xs uppercase tracking-[2px] text-slate-500 font-black">
                   Cliente
                 </th>
 
-                <th className="p-5 text-center text-xs uppercase tracking-widest text-slate-400 font-black">
+                <th className="p-5 text-center text-xs uppercase tracking-[2px] text-slate-500 font-black">
                   Productos
                 </th>
 
-                <th className="p-5 text-center text-xs uppercase tracking-widest text-slate-400 font-black">
+                <th className="p-5 text-center text-xs uppercase tracking-[2px] text-slate-500 font-black">
                   Fecha
                 </th>
 
-                <th className="p-5 text-right text-xs uppercase tracking-widest text-slate-400 font-black">
+                <th className="p-5 text-right text-xs uppercase tracking-[2px] text-slate-500 font-black">
                   Total
                 </th>
 
@@ -349,44 +407,84 @@ export default function ReportsPage() {
 
                   <tr
                     key={sale.id}
-                    className="border-t hover:bg-slate-50 transition"
+                    className="border-b border-white/5 hover:bg-white/[0.03] transition"
                   >
 
+                    {/* CLIENTE */}
                     <td className="p-5">
 
-                      <div>
+                      <div className="flex items-center gap-4">
 
-                        <p className="font-bold text-slate-800">
-                          {sale.customerName || "Cliente General"}
-                        </p>
+                        <div className="h-12 w-12 rounded-2xl bg-blue-500/10 flex items-center justify-center">
+                          <ShieldCheck
+                            size={20}
+                            className="text-blue-400"
+                          />
+                        </div>
 
-                        <p className="text-sm text-slate-500">
-                          Venta #{sale.id}
-                        </p>
+                        <div>
+
+                          <p className="font-bold text-white">
+                            {sale.customerName ||
+                              "Cliente General"}
+                          </p>
+
+                          <div className="flex items-center gap-1 text-sm text-slate-500 mt-1">
+
+                            <ChevronRight size={14} />
+
+                            Venta #
+                            {sale.id}
+
+                          </div>
+
+                        </div>
 
                       </div>
 
                     </td>
 
-                    <td className="p-5 text-center font-semibold text-slate-600">
+                    {/* PRODUCTOS */}
+                    <td className="p-5 text-center">
 
-                      {(sale.details || []).reduce(
-                        (acc: number, item: any) =>
-                          acc + Number(item.quantity || 0),
-                        0
+                      <span className="inline-flex items-center justify-center rounded-2xl bg-purple-500/10 px-4 py-2 text-purple-400 font-bold">
+
+                        {(sale.details || []).reduce(
+                          (
+                            acc: number,
+                            item: any
+                          ) =>
+                            acc +
+                            Number(
+                              item.quantity || 0
+                            ),
+                          0
+                        )}
+
+                      </span>
+
+                    </td>
+
+                    {/* FECHA */}
+                    <td className="p-5 text-center text-slate-400 font-medium">
+
+                      {new Date(
+                        sale.createdAt
+                      ).toLocaleDateString(
+                        "es-PE"
                       )}
 
                     </td>
 
-                    <td className="p-5 text-center text-slate-500 font-medium">
+                    {/* TOTAL */}
+                    <td className="p-5 text-right">
 
-                      {new Date(sale.createdAt).toLocaleDateString()}
-
-                    </td>
-
-                    <td className="p-5 text-right font-black text-emerald-600 text-lg">
-
-                      S/ {Number(sale.total || 0).toFixed(2)}
+                      <span className="text-emerald-400 text-xl font-black">
+                        S/{" "}
+                        {Number(
+                          sale.total || 0
+                        ).toFixed(2)}
+                      </span>
 
                     </td>
 
@@ -400,10 +498,16 @@ export default function ReportsPage() {
 
                   <td
                     colSpan={4}
-                    className="text-center p-10 text-slate-400 font-medium"
+                    className="text-center p-16 text-slate-500"
                   >
 
-                    No hay ventas registradas
+                    <div className="flex flex-col items-center gap-3">
+
+                      <ReceiptText size={40} />
+
+                      No hay ventas registradas
+
+                    </div>
 
                   </td>
 
@@ -416,7 +520,9 @@ export default function ReportsPage() {
           </table>
 
         </div>
+
       </div>
+
     </div>
   );
 }

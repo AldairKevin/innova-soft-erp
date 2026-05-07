@@ -5,7 +5,6 @@ import { useState, useEffect } from "react";
 import {
   Trash2,
   PlusCircle,
-  ArrowLeft,
   Package,
   Boxes,
   DollarSign,
@@ -15,9 +14,10 @@ import {
   Pencil,
   Save,
   X,
+  Sparkles,
+  ShieldCheck,
+  TrendingUp,
 } from "lucide-react";
-
-import Link from "next/link";
 
 import {
   getProducts,
@@ -27,14 +27,15 @@ import {
 } from "../../actions/products";
 
 export default function InventoryPage() {
-
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [search, setSearch] = useState("");
 
   // EDITAR
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(
+    null
+  );
 
   const [editData, setEditData] = useState({
     name: "",
@@ -44,27 +45,18 @@ export default function InventoryPage() {
 
   // CARGAR PRODUCTOS
   const loadData = async () => {
-
     try {
-
       setLoading(true);
 
       const res = await getProducts();
 
       if (res.success) {
-
         setProducts(res.data || []);
-
       }
-
     } catch (error) {
-
       console.error(error);
-
     } finally {
-
       setLoading(false);
-
     }
   };
 
@@ -76,7 +68,6 @@ export default function InventoryPage() {
   async function handleSubmit(
     e: React.FormEvent<HTMLFormElement>
   ) {
-
     e.preventDefault();
 
     const form = e.currentTarget;
@@ -84,33 +75,24 @@ export default function InventoryPage() {
     const formData = new FormData(form);
 
     try {
-
       const res = await createProduct(formData);
 
       if (res.success) {
-
         form.reset();
 
         await loadData();
 
         alert("✅ Producto agregado correctamente");
-
       } else {
-
         alert("❌ " + res.error);
-
       }
-
     } catch (error) {
-
       console.error(error);
-
     }
   }
 
   // ELIMINAR
   async function handleDelete(id: number) {
-
     const confirmDelete =
       confirm("¿Eliminar producto?");
 
@@ -123,7 +105,6 @@ export default function InventoryPage() {
 
   // EDITAR
   function startEdit(product: any) {
-
     setEditingId(product.id);
 
     setEditData({
@@ -135,7 +116,6 @@ export default function InventoryPage() {
 
   // CANCELAR
   function cancelEdit() {
-
     setEditingId(null);
 
     setEditData({
@@ -145,11 +125,9 @@ export default function InventoryPage() {
     });
   }
 
-  // GUARDAR CAMBIOS
+  // GUARDAR
   async function handleSave(id: number) {
-
     try {
-
       const formData = new FormData();
 
       formData.append("id", String(id));
@@ -160,31 +138,26 @@ export default function InventoryPage() {
       const res = await updateProduct(formData);
 
       if (res.success) {
-
         alert("✅ Producto actualizado");
 
         cancelEdit();
 
         loadData();
-
       } else {
-
         alert("❌ " + res.error);
-
       }
-
     } catch (error) {
-
       console.error(error);
 
       alert("❌ Error al actualizar");
-
     }
   }
 
-  // FILTRAR PRODUCTOS
+  // FILTRO
   const filteredProducts = products.filter((p) =>
-    p.name.toLowerCase().includes(search.toLowerCase())
+    p.name
+      .toLowerCase()
+      .includes(search.toLowerCase())
   );
 
   // KPIs
@@ -197,7 +170,9 @@ export default function InventoryPage() {
 
   const totalValue = products.reduce(
     (acc, p) =>
-      acc + Number(p.stock || 0) * Number(p.price || 0),
+      acc +
+      Number(p.stock || 0) *
+        Number(p.price || 0),
     0
   );
 
@@ -206,204 +181,260 @@ export default function InventoryPage() {
   ).length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-white to-slate-200 p-8 flex flex-col gap-8">
+    <div className="space-y-8">
 
       {/* HEADER */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+      <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-slate-900 via-slate-950 to-black p-8 shadow-2xl">
 
-        <div>
+        <div className="absolute top-0 right-0 h-64 w-64 rounded-full bg-blue-500/10 blur-3xl" />
 
-          <h1 className="text-5xl font-black text-slate-800 tracking-tight">
-            Inventario Empresarial
-          </h1>
+        <div className="absolute bottom-0 left-0 h-52 w-52 rounded-full bg-cyan-500/10 blur-3xl" />
 
-          <p className="text-slate-500 mt-2 font-medium text-lg">
-            Control inteligente de stock y productos
-          </p>
+        <div className="relative z-10 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-8">
+
+          <div>
+
+            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/20 bg-cyan-500/10 px-4 py-2 text-sm text-cyan-400 mb-6">
+              <Sparkles size={16} />
+              Gestión empresarial avanzada
+            </div>
+
+            <h1 className="text-5xl font-black text-white tracking-tight leading-tight">
+              Inventario
+              <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+                {" "}
+                Inteligente
+              </span>
+            </h1>
+
+            <p className="text-slate-400 mt-4 text-lg max-w-2xl">
+              Control total de productos,
+              stock y valorización en
+              tiempo real.
+            </p>
+
+          </div>
+
+          <div className="flex items-center gap-4">
+
+            <button
+              onClick={loadData}
+              className="h-14 w-14 rounded-2xl border border-white/10 bg-white/5 flex items-center justify-center hover:bg-white/10 transition-all"
+            >
+              <RefreshCcw
+                size={20}
+                className={`text-blue-400 ${
+                  loading
+                    ? "animate-spin"
+                    : ""
+                }`}
+              />
+            </button>
+
+            <div className="rounded-3xl border border-emerald-500/10 bg-emerald-500/5 px-6 py-4">
+              <div className="flex items-center gap-2">
+
+                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+
+                <span className="text-sm text-emerald-400 font-semibold">
+                  Sistema activo
+                </span>
+
+              </div>
+
+              <p className="text-xs text-slate-400 mt-1">
+                Inventario sincronizado
+              </p>
+
+            </div>
+
+          </div>
 
         </div>
 
-        <div className="flex items-center gap-3">
-
-          <button
-            onClick={loadData}
-            className="bg-white border border-slate-200 shadow-lg rounded-2xl p-4 hover:scale-105 hover:bg-slate-100 transition-all"
-          >
-
-            <RefreshCcw
-              size={20}
-              className={loading ? "animate-spin text-blue-600" : "text-blue-600"}
-            />
-
-          </button>
-
-          <Link
-            href="/dashboard"
-            className="bg-slate-900 text-white px-6 py-4 rounded-2xl font-bold flex items-center gap-2 hover:bg-slate-800 transition-all shadow-lg"
-          >
-
-            <ArrowLeft size={18} />
-
-            Dashboard
-
-          </Link>
-
-        </div>
       </div>
 
       {/* KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
 
         {/* PRODUCTOS */}
-        <div className="bg-white/90 backdrop-blur rounded-3xl p-6 shadow-xl border border-slate-200">
+        <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-slate-900 to-slate-950 p-6 shadow-2xl">
 
-          <div className="flex items-center justify-between mb-5">
+          <div className="absolute top-0 right-0 h-24 w-24 bg-blue-500/10 rounded-full blur-2xl" />
 
-            <div>
+          <div className="relative z-10">
 
-              <p className="text-xs uppercase tracking-[3px] text-slate-400 font-black">
-                Productos
-              </p>
+            <div className="flex items-center justify-between">
 
-              <h2 className="text-5xl font-black text-blue-700 mt-3">
-                {totalProducts}
-              </h2>
+              <div>
+
+                <p className="text-xs uppercase tracking-[3px] text-slate-500 font-black">
+                  Productos
+                </p>
+
+                <h2 className="text-5xl font-black text-white mt-4">
+                  {totalProducts}
+                </h2>
+
+              </div>
+
+              <div className="h-16 w-16 rounded-3xl bg-blue-500/10 flex items-center justify-center">
+                <Package
+                  size={30}
+                  className="text-blue-400"
+                />
+              </div>
 
             </div>
 
-            <div className="bg-blue-100 p-5 rounded-3xl">
-
-              <Package
-                size={34}
-                className="text-blue-700"
-              />
-
-            </div>
+            <p className="text-slate-400 text-sm mt-6">
+              Productos registrados
+            </p>
 
           </div>
-
-          <p className="text-sm text-slate-500 font-semibold">
-            Productos registrados
-          </p>
 
         </div>
 
         {/* STOCK */}
-        <div className="bg-white/90 backdrop-blur rounded-3xl p-6 shadow-xl border border-slate-200">
+        <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-slate-900 to-slate-950 p-6 shadow-2xl">
 
-          <div className="flex items-center justify-between mb-5">
+          <div className="absolute top-0 right-0 h-24 w-24 bg-purple-500/10 rounded-full blur-2xl" />
 
-            <div>
+          <div className="relative z-10">
 
-              <p className="text-xs uppercase tracking-[3px] text-slate-400 font-black">
-                Stock Total
-              </p>
+            <div className="flex items-center justify-between">
 
-              <h2 className="text-5xl font-black text-purple-700 mt-3">
-                {totalStock}
-              </h2>
+              <div>
+
+                <p className="text-xs uppercase tracking-[3px] text-slate-500 font-black">
+                  Stock
+                </p>
+
+                <h2 className="text-5xl font-black text-white mt-4">
+                  {totalStock}
+                </h2>
+
+              </div>
+
+              <div className="h-16 w-16 rounded-3xl bg-purple-500/10 flex items-center justify-center">
+                <Boxes
+                  size={30}
+                  className="text-purple-400"
+                />
+              </div>
 
             </div>
 
-            <div className="bg-purple-100 p-5 rounded-3xl">
-
-              <Boxes
-                size={34}
-                className="text-purple-700"
-              />
-
-            </div>
+            <p className="text-slate-400 text-sm mt-6">
+              Unidades disponibles
+            </p>
 
           </div>
-
-          <p className="text-sm text-slate-500 font-semibold">
-            Unidades disponibles
-          </p>
 
         </div>
 
         {/* VALOR */}
-        <div className="bg-white/90 backdrop-blur rounded-3xl p-6 shadow-xl border border-slate-200">
+        <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-slate-900 to-slate-950 p-6 shadow-2xl">
 
-          <div className="flex items-center justify-between mb-5">
+          <div className="absolute top-0 right-0 h-24 w-24 bg-emerald-500/10 rounded-full blur-2xl" />
 
-            <div>
+          <div className="relative z-10">
 
-              <p className="text-xs uppercase tracking-[3px] text-slate-400 font-black">
-                Valor Total
-              </p>
+            <div className="flex items-center justify-between">
 
-              <h2 className="text-4xl font-black text-emerald-600 mt-3">
-                S/ {totalValue.toFixed(2)}
-              </h2>
+              <div>
+
+                <p className="text-xs uppercase tracking-[3px] text-slate-500 font-black">
+                  Valorización
+                </p>
+
+                <h2 className="text-3xl font-black text-white mt-4">
+                  S/{" "}
+                  {totalValue.toFixed(2)}
+                </h2>
+
+              </div>
+
+              <div className="h-16 w-16 rounded-3xl bg-emerald-500/10 flex items-center justify-center">
+                <DollarSign
+                  size={30}
+                  className="text-emerald-400"
+                />
+              </div>
 
             </div>
 
-            <div className="bg-emerald-100 p-5 rounded-3xl">
-
-              <DollarSign
-                size={34}
-                className="text-emerald-600"
-              />
-
-            </div>
+            <p className="text-slate-400 text-sm mt-6">
+              Capital en almacén
+            </p>
 
           </div>
-
-          <p className="text-sm text-slate-500 font-semibold">
-            Capital almacenado
-          </p>
 
         </div>
 
         {/* ALERTAS */}
-        <div className="bg-white/90 backdrop-blur rounded-3xl p-6 shadow-xl border border-slate-200">
+        <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-slate-900 to-slate-950 p-6 shadow-2xl">
 
-          <div className="flex items-center justify-between mb-5">
+          <div className="absolute top-0 right-0 h-24 w-24 bg-red-500/10 rounded-full blur-2xl" />
 
-            <div>
+          <div className="relative z-10">
 
-              <p className="text-xs uppercase tracking-[3px] text-slate-400 font-black">
-                Stock Bajo
-              </p>
+            <div className="flex items-center justify-between">
 
-              <h2 className="text-5xl font-black text-red-500 mt-3">
-                {lowStock}
-              </h2>
+              <div>
+
+                <p className="text-xs uppercase tracking-[3px] text-slate-500 font-black">
+                  Stock Bajo
+                </p>
+
+                <h2 className="text-5xl font-black text-white mt-4">
+                  {lowStock}
+                </h2>
+
+              </div>
+
+              <div className="h-16 w-16 rounded-3xl bg-red-500/10 flex items-center justify-center">
+                <AlertTriangle
+                  size={30}
+                  className="text-red-400"
+                />
+              </div>
 
             </div>
 
-            <div className="bg-red-100 p-5 rounded-3xl">
-
-              <AlertTriangle
-                size={34}
-                className="text-red-500"
-              />
-
-            </div>
+            <p className="text-slate-400 text-sm mt-6">
+              Productos críticos
+            </p>
 
           </div>
 
-          <p className="text-sm text-slate-500 font-semibold">
-            Productos críticos
-          </p>
-
         </div>
+
       </div>
 
-      {/* CONTENIDO */}
-      <div className="grid grid-cols-1 xl:grid-cols-[380px_1fr] gap-8">
+      {/* CONTENT */}
+      <div className="grid grid-cols-1 xl:grid-cols-[400px_1fr] gap-8">
 
         {/* FORM */}
-        <div className="bg-white rounded-[2rem] p-8 shadow-2xl border border-slate-200 h-fit">
+        <div className="rounded-[2rem] border border-white/10 bg-slate-900/70 backdrop-blur-xl p-8 shadow-2xl h-fit">
 
           <div className="flex items-center gap-3 mb-8">
 
-            <PlusCircle className="text-blue-600" />
+            <div className="h-12 w-12 rounded-2xl bg-blue-500/10 flex items-center justify-center">
+              <PlusCircle className="text-blue-400" />
+            </div>
 
-            <h2 className="text-3xl font-black text-slate-800">
-              Nuevo Producto
-            </h2>
+            <div>
+
+              <h2 className="text-2xl font-black text-white">
+                Nuevo Producto
+              </h2>
+
+              <p className="text-slate-400 text-sm">
+                Registrar producto
+              </p>
+
+            </div>
 
           </div>
 
@@ -414,15 +445,15 @@ export default function InventoryPage() {
 
             <div>
 
-              <label className="text-xs font-black uppercase tracking-[2px] text-slate-400">
+              <label className="text-xs uppercase tracking-[2px] text-slate-500 font-black">
                 Nombre
               </label>
 
               <input
                 name="name"
-                placeholder="Ej. Laptop ASUS"
+                placeholder="Laptop ASUS"
                 required
-                className="w-full mt-2 p-4 bg-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 font-semibold"
+                className="w-full mt-2 bg-slate-950 border border-white/10 rounded-2xl p-4 text-white outline-none focus:border-blue-500 transition"
               />
 
             </div>
@@ -431,7 +462,7 @@ export default function InventoryPage() {
 
               <div>
 
-                <label className="text-xs font-black uppercase tracking-[2px] text-slate-400">
+                <label className="text-xs uppercase tracking-[2px] text-slate-500 font-black">
                   Precio
                 </label>
 
@@ -439,25 +470,25 @@ export default function InventoryPage() {
                   name="price"
                   type="number"
                   step="0.01"
-                  placeholder="0.00"
                   required
-                  className="w-full mt-2 p-4 bg-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 font-semibold"
+                  placeholder="0.00"
+                  className="w-full mt-2 bg-slate-950 border border-white/10 rounded-2xl p-4 text-white outline-none focus:border-blue-500 transition"
                 />
 
               </div>
 
               <div>
 
-                <label className="text-xs font-black uppercase tracking-[2px] text-slate-400">
+                <label className="text-xs uppercase tracking-[2px] text-slate-500 font-black">
                   Stock
                 </label>
 
                 <input
                   name="stock"
                   type="number"
-                  placeholder="0"
                   required
-                  className="w-full mt-2 p-4 bg-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 font-semibold"
+                  placeholder="0"
+                  className="w-full mt-2 bg-slate-950 border border-white/10 rounded-2xl p-4 text-white outline-none focus:border-blue-500 transition"
                 />
 
               </div>
@@ -466,48 +497,48 @@ export default function InventoryPage() {
 
             <button
               type="submit"
-              className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:scale-[1.02] text-white py-5 rounded-2xl font-black shadow-xl transition-all"
+              className="w-full bg-gradient-to-r from-blue-600 to-cyan-500 hover:scale-[1.02] transition-all text-white py-5 rounded-2xl font-black shadow-lg shadow-blue-500/20"
             >
-
               GUARDAR PRODUCTO
-
             </button>
 
           </form>
+
         </div>
 
-        {/* TABLA */}
-        <div className="bg-white rounded-[2rem] shadow-2xl border border-slate-200 overflow-hidden">
+        {/* TABLE */}
+        <div className="rounded-[2rem] border border-white/10 bg-slate-900/70 backdrop-blur-xl shadow-2xl overflow-hidden">
 
           {/* TOP */}
-          <div className="p-7 border-b flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white">
+          <div className="border-b border-white/5 p-7 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
 
             <div>
 
-              <h2 className="text-3xl font-black text-slate-800">
+              <h2 className="text-3xl font-black text-white">
                 Inventario General
               </h2>
 
-              <p className="text-slate-500 mt-1">
-                Administración avanzada de productos
+              <p className="text-slate-400 mt-1">
+                Gestión avanzada de productos
               </p>
 
             </div>
 
-            {/* BUSCADOR */}
             <div className="relative">
 
               <Search
                 size={18}
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"
               />
 
               <input
                 type="text"
                 placeholder="Buscar producto..."
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-11 pr-4 py-4 rounded-2xl bg-slate-100 outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-[320px] text-slate-900 font-semibold"
+                onChange={(e) =>
+                  setSearch(e.target.value)
+                }
+                className="pl-11 pr-4 py-4 rounded-2xl bg-slate-950 border border-white/10 outline-none focus:border-blue-500 w-full lg:w-[320px] text-white"
               />
 
             </div>
@@ -519,23 +550,23 @@ export default function InventoryPage() {
 
             <table className="w-full">
 
-              <thead className="bg-slate-100">
+              <thead className="border-b border-white/5 bg-slate-950/50">
 
                 <tr>
 
-                  <th className="p-5 text-left text-xs uppercase tracking-[2px] text-slate-500 font-black">
+                  <th className="p-5 text-left text-xs uppercase tracking-[2px] text-slate-500">
                     Producto
                   </th>
 
-                  <th className="p-5 text-center text-xs uppercase tracking-[2px] text-slate-500 font-black">
+                  <th className="p-5 text-center text-xs uppercase tracking-[2px] text-slate-500">
                     Precio
                   </th>
 
-                  <th className="p-5 text-center text-xs uppercase tracking-[2px] text-slate-500 font-black">
+                  <th className="p-5 text-center text-xs uppercase tracking-[2px] text-slate-500">
                     Stock
                   </th>
 
-                  <th className="p-5 text-right text-xs uppercase tracking-[2px] text-slate-500 font-black">
+                  <th className="p-5 text-right text-xs uppercase tracking-[2px] text-slate-500">
                     Acciones
                   </th>
 
@@ -551,11 +582,9 @@ export default function InventoryPage() {
 
                     <td
                       colSpan={4}
-                      className="text-center p-12 text-slate-400 animate-pulse"
+                      className="text-center p-16 text-slate-500"
                     >
-
                       Cargando inventario...
-
                     </td>
 
                   </tr>
@@ -566,7 +595,7 @@ export default function InventoryPage() {
 
                     <tr
                       key={prod.id}
-                      className="border-t hover:bg-slate-50 transition-all"
+                      className="border-b border-white/5 hover:bg-white/[0.03] transition"
                     >
 
                       {/* PRODUCTO */}
@@ -582,20 +611,35 @@ export default function InventoryPage() {
                                 name: e.target.value,
                               })
                             }
-                            className="bg-slate-100 rounded-xl px-4 py-3 w-full outline-none text-slate-900 font-bold"
+                            className="bg-slate-950 border border-white/10 rounded-2xl px-4 py-3 w-full outline-none text-white"
                           />
 
                         ) : (
 
                           <div>
 
-                            <p className="font-black text-slate-800 text-lg">
-                              {prod.name}
-                            </p>
+                            <div className="flex items-center gap-3">
 
-                            <p className="text-sm text-slate-400">
-                              ID #{prod.id}
-                            </p>
+                              <div className="h-12 w-12 rounded-2xl bg-blue-500/10 flex items-center justify-center">
+                                <Package
+                                  size={20}
+                                  className="text-blue-400"
+                                />
+                              </div>
+
+                              <div>
+
+                                <p className="font-bold text-white text-lg">
+                                  {prod.name}
+                                </p>
+
+                                <p className="text-sm text-slate-500">
+                                  ID #{prod.id}
+                                </p>
+
+                              </div>
+
+                            </div>
 
                           </div>
 
@@ -614,16 +658,20 @@ export default function InventoryPage() {
                             onChange={(e) =>
                               setEditData({
                                 ...editData,
-                                price: e.target.value,
+                                price:
+                                  e.target.value,
                               })
                             }
-                            className="bg-slate-100 rounded-xl px-4 py-3 w-[120px] outline-none text-center text-slate-900 font-bold"
+                            className="bg-slate-950 border border-white/10 rounded-2xl px-4 py-3 w-[120px] outline-none text-center text-white"
                           />
 
                         ) : (
 
-                          <span className="font-black text-blue-600 text-lg">
-                            S/ {Number(prod.price).toFixed(2)}
+                          <span className="font-black text-cyan-400 text-lg">
+                            S/{" "}
+                            {Number(
+                              prod.price
+                            ).toFixed(2)}
                           </span>
 
                         )}
@@ -641,21 +689,26 @@ export default function InventoryPage() {
                             onChange={(e) =>
                               setEditData({
                                 ...editData,
-                                stock: e.target.value,
+                                stock:
+                                  e.target.value,
                               })
                             }
-                            className="bg-slate-100 rounded-xl px-4 py-3 w-[100px] outline-none text-center text-slate-900 font-bold"
+                            className="bg-slate-950 border border-white/10 rounded-2xl px-4 py-3 w-[100px] outline-none text-center text-white"
                           />
 
                         ) : (
 
                           <span
-                            className={`px-5 py-2 rounded-2xl text-sm font-black ${
-                              Number(prod.stock) < 5
-                                ? "bg-red-100 text-red-500"
-                                : "bg-slate-200 text-slate-700"
+                            className={`inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-sm font-bold ${
+                              Number(
+                                prod.stock
+                              ) < 5
+                                ? "bg-red-500/10 text-red-400"
+                                : "bg-emerald-500/10 text-emerald-400"
                             }`}
                           >
+
+                            <ShieldCheck size={14} />
 
                             {prod.stock}
 
@@ -666,29 +719,31 @@ export default function InventoryPage() {
                       </td>
 
                       {/* ACCIONES */}
-                      <td className="p-5 text-right">
+                      <td className="p-5">
 
-                        <div className="flex items-center justify-end gap-3">
+                        <div className="flex justify-end gap-3">
 
                           {editingId === prod.id ? (
 
                             <>
                               <button
-                                onClick={() => handleSave(prod.id)}
-                                className="bg-emerald-100 hover:bg-emerald-200 text-emerald-600 p-3 rounded-2xl transition"
+                                onClick={() =>
+                                  handleSave(
+                                    prod.id
+                                  )
+                                }
+                                className="h-12 w-12 rounded-2xl bg-emerald-500/10 hover:bg-emerald-500/20 flex items-center justify-center text-emerald-400 transition"
                               >
-
                                 <Save size={18} />
-
                               </button>
 
                               <button
-                                onClick={cancelEdit}
-                                className="bg-slate-200 hover:bg-slate-300 text-slate-700 p-3 rounded-2xl transition"
+                                onClick={
+                                  cancelEdit
+                                }
+                                className="h-12 w-12 rounded-2xl bg-slate-500/10 hover:bg-slate-500/20 flex items-center justify-center text-slate-300 transition"
                               >
-
                                 <X size={18} />
-
                               </button>
                             </>
 
@@ -696,21 +751,25 @@ export default function InventoryPage() {
 
                             <>
                               <button
-                                onClick={() => startEdit(prod)}
-                                className="bg-blue-100 hover:bg-blue-200 text-blue-600 p-3 rounded-2xl transition"
+                                onClick={() =>
+                                  startEdit(
+                                    prod
+                                  )
+                                }
+                                className="h-12 w-12 rounded-2xl bg-blue-500/10 hover:bg-blue-500/20 flex items-center justify-center text-blue-400 transition"
                               >
-
                                 <Pencil size={18} />
-
                               </button>
 
                               <button
-                                onClick={() => handleDelete(prod.id)}
-                                className="bg-red-100 hover:bg-red-200 text-red-500 p-3 rounded-2xl transition"
+                                onClick={() =>
+                                  handleDelete(
+                                    prod.id
+                                  )
+                                }
+                                className="h-12 w-12 rounded-2xl bg-red-500/10 hover:bg-red-500/20 flex items-center justify-center text-red-400 transition"
                               >
-
                                 <Trash2 size={18} />
-
                               </button>
                             </>
 
@@ -730,10 +789,18 @@ export default function InventoryPage() {
 
                     <td
                       colSpan={4}
-                      className="text-center p-12 text-slate-400"
+                      className="text-center p-16 text-slate-500"
                     >
 
-                      No se encontraron productos
+                      <div className="flex flex-col items-center gap-3">
+
+                        <TrendingUp
+                          size={40}
+                        />
+
+                        No se encontraron productos
+
+                      </div>
 
                     </td>
 
@@ -746,8 +813,11 @@ export default function InventoryPage() {
             </table>
 
           </div>
+
         </div>
+
       </div>
+
     </div>
   );
 }

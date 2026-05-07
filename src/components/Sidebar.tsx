@@ -10,11 +10,17 @@ import {
   Package,
   BarChart3,
   Settings,
+  Rocket,
+  ShieldCheck,
 } from "lucide-react";
 
 import LogoutButton from "./logout-button";
 
-export default function Sidebar({ user }: { user: User | null }) {
+export default function Sidebar({
+  user,
+}: {
+  user: User | null;
+}) {
   const pathname = usePathname();
 
   const links = [
@@ -51,63 +57,130 @@ export default function Sidebar({ user }: { user: User | null }) {
   ];
 
   return (
-    <aside className="h-screen w-64 bg-slate-900 text-white flex flex-col justify-between p-4 shrink-0">
-      
+    <aside className="h-screen w-72 bg-[#0F172A] border-r border-white/5 text-white flex flex-col justify-between px-5 py-6 shrink-0">
+
       {/* TOP */}
       <div>
-        <h1 className="text-2xl font-bold mb-6">
-          InnovaSoft 🚀
-        </h1>
 
-        {/* USER INFO */}
-        <div className="mb-6 bg-white/10 p-3 rounded-xl text-sm">
-          <p className="font-semibold">
-            {user?.name ?? "Usuario"}
-          </p>
-          <p className="text-slate-400">
-            {user?.email ?? "-"}
-          </p>
-          <p className="text-xs mt-1 text-blue-400">
-            {user?.role ?? "SIN ROL"}
-          </p>
+        {/* LOGO */}
+        <div className="flex items-center gap-3 mb-10">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-blue-500/20">
+            <Rocket size={24} />
+          </div>
+
+          <div>
+            <h1 className="text-2xl font-black tracking-tight">
+              InnovaSoft
+            </h1>
+
+            <p className="text-xs text-slate-400">
+              Enterprise System
+            </p>
+          </div>
         </div>
 
-        {/* NAV */}
+        {/* USER CARD */}
+        <div className="relative overflow-hidden mb-8 rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl p-4">
+
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-cyan-500/5 pointer-events-none" />
+
+          <div className="relative flex items-center gap-3">
+
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-slate-700 to-slate-800 flex items-center justify-center text-lg font-bold">
+              {user?.name?.charAt(0) ?? "U"}
+            </div>
+
+            <div className="flex-1 overflow-hidden">
+
+              <h2 className="font-semibold truncate">
+                {user?.name ?? "Usuario"}
+              </h2>
+
+              <p className="text-sm text-slate-400 truncate">
+                {user?.email ?? "-"}
+              </p>
+
+              <div className="mt-2 inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-1 text-xs text-emerald-400">
+                <ShieldCheck size={12} />
+                {user?.role ?? "SIN ROL"}
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+        {/* NAVIGATION */}
         <nav className="space-y-2">
+
           {links.map((link) => {
-            // 🔥 FIX IMPORTANTE: evita que desaparezca todo
             if (!user) return null;
 
             const role = user.role ?? "";
+
             if (!link.roles.includes(role)) return null;
 
-            const isActive = pathname === link.href;
+            const isActive =
+              pathname === link.href;
 
             return (
               <Link
                 key={link.name}
                 href={link.href}
-                className={`flex items-center gap-3 p-3 rounded-xl transition ${
+                className={`group flex items-center gap-4 rounded-2xl px-4 py-3 transition-all duration-200 ${
                   isActive
-                    ? "bg-blue-600"
-                    : "hover:bg-slate-800"
+                    ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-500/20"
+                    : "text-slate-300 hover:bg-white/5 hover:text-white"
                 }`}
               >
-                <link.icon size={20} />
-                {link.name}
+
+                <div
+                  className={`transition-transform duration-200 ${
+                    isActive
+                      ? "scale-110"
+                      : "group-hover:scale-105"
+                  }`}
+                >
+                  <link.icon size={20} />
+                </div>
+
+                <span className="font-medium">
+                  {link.name}
+                </span>
+
               </Link>
             );
           })}
+
         </nav>
       </div>
 
       {/* BOTTOM */}
       <div className="space-y-4">
-        <div className="bg-white/10 p-3 rounded-xl text-sm">
-          Sistema activo
+
+        {/* STATUS */}
+        <div className="rounded-2xl border border-emerald-500/10 bg-emerald-500/5 p-4">
+
+          <div className="flex items-center gap-2">
+
+            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+
+            <span className="text-sm text-emerald-400 font-medium">
+              Sistema operativo
+            </span>
+
+          </div>
+
+          <p className="text-xs text-slate-400 mt-2">
+            Todos los servicios funcionando correctamente.
+          </p>
+
         </div>
 
+        {/* LOGOUT */}
         <LogoutButton />
+
       </div>
     </aside>
   );
