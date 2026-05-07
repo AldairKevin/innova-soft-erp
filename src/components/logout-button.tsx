@@ -2,29 +2,23 @@
 
 import { useRouter } from "next/navigation";
 
-import { logoutUser } from "@/app/actions/auth";
-
 export default function LogoutButton() {
-
   const router = useRouter();
 
-  async function handleLogout() {
+  const handleLogout = async () => {
+    await fetch("/api/logout", {
+      method: "POST",
+    });
 
-    await logoutUser();
-
-    router.push("/login");
-
-  }
+    router.push("/login"); // redirige
+  };
 
   return (
-
     <button
       onClick={handleLogout}
-      className="bg-red-500 text-white px-4 py-2 rounded mt-4"
+      className="bg-red-500 px-4 py-2 rounded-xl"
     >
       Cerrar sesión
     </button>
-
   );
-
 }

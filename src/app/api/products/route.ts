@@ -1,12 +1,16 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export const dynamic = "force-dynamic"; // Asegura que no devuelva datos viejos
-
 export async function GET() {
   const products = await prisma.product.findMany({
-
-    orderBy: { name: 'asc' }
+    orderBy: { createdAt: "desc" },
   });
-  return NextResponse.json(products);
+
+  // 🔥 convertir Decimal → number
+  const data = products.map((p:any) => ({
+    ...p,
+    price: Number(p.price),
+  }));
+
+  return NextResponse.json(data);
 }
