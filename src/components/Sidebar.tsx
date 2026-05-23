@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { User } from "@/types/user";
+import { useBusiness } from "@/hooks/useBusiness";
 
 import {
   LayoutDashboard,
@@ -22,6 +23,8 @@ export default function Sidebar({
   user: User | null;
 }) {
   const pathname = usePathname();
+
+  const business = useBusiness();
 
   const links = [
     {
@@ -64,19 +67,35 @@ export default function Sidebar({
 
         {/* LOGO */}
         <div className="flex items-center gap-3 mb-10">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-blue-500/20">
-            <Rocket size={24} />
+
+          {/* LOGO ICON */}
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-blue-500/20 overflow-hidden">
+
+            {business?.logo ? (
+              <img
+                src={business.logo}
+                alt="Logo"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <Rocket size={24} />
+            )}
+
           </div>
 
-          <div>
-            <h1 className="text-2xl font-black tracking-tight">
-              InnovaSoft
+          {/* BUSINESS INFO */}
+          <div className="overflow-hidden">
+
+            <h1 className="text-2xl font-black tracking-tight truncate">
+              {business?.name || "InnovaSoft"}
             </h1>
 
             <p className="text-xs text-slate-400">
               Enterprise System
             </p>
+
           </div>
+
         </div>
 
         {/* USER CARD */}
@@ -102,6 +121,7 @@ export default function Sidebar({
 
               <div className="mt-2 inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-1 text-xs text-emerald-400">
                 <ShieldCheck size={12} />
+
                 {user?.role ?? "SIN ROL"}
               </div>
 
