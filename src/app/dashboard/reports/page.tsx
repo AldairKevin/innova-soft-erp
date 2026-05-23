@@ -92,14 +92,12 @@ export default function ReportsPage() {
       {/* HERO */}
       <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-slate-900 via-slate-950 to-black p-8 shadow-2xl">
 
-        {/* FX */}
         <div className="absolute top-0 right-0 h-72 w-72 rounded-full bg-blue-500/10 blur-3xl" />
 
         <div className="absolute bottom-0 left-0 h-64 w-64 rounded-full bg-cyan-500/10 blur-3xl" />
 
         <div className="relative z-10 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-8">
 
-          {/* LEFT */}
           <div>
 
             <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/20 bg-cyan-500/10 px-4 py-2 text-sm text-cyan-400 mb-6">
@@ -123,7 +121,6 @@ export default function ReportsPage() {
 
           </div>
 
-          {/* RIGHT */}
           <div className="flex items-center gap-4">
 
             <button
@@ -336,188 +333,6 @@ export default function ReportsPage() {
             </p>
 
           </div>
-
-        </div>
-
-      </div>
-
-      {/* TABLA */}
-      <div className="rounded-[2rem] border border-white/10 bg-slate-900/70 backdrop-blur-xl shadow-2xl overflow-hidden">
-
-        {/* TOP */}
-        <div className="border-b border-white/5 p-7 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
-
-          <div>
-
-            <h2 className="text-3xl font-black text-white">
-              Historial de Ventas
-            </h2>
-
-            <p className="text-slate-400 mt-1">
-              Seguimiento detallado de
-              operaciones comerciales
-            </p>
-
-          </div>
-
-          <div className="inline-flex items-center gap-2 rounded-2xl border border-blue-500/10 bg-blue-500/5 px-5 py-3 text-blue-400 font-semibold text-sm">
-
-            <Activity size={16} />
-
-            {sales.length} registros
-
-          </div>
-
-        </div>
-
-        {/* TABLE */}
-        <div className="overflow-x-auto">
-
-          <table className="w-full">
-
-            <thead className="bg-slate-950/50 border-b border-white/5">
-
-              <tr>
-
-                <th className="p-5 text-left text-xs uppercase tracking-[2px] text-slate-500 font-black">
-                  Cliente
-                </th>
-
-                <th className="p-5 text-center text-xs uppercase tracking-[2px] text-slate-500 font-black">
-                  Productos
-                </th>
-
-                <th className="p-5 text-center text-xs uppercase tracking-[2px] text-slate-500 font-black">
-                  Fecha
-                </th>
-
-                <th className="p-5 text-right text-xs uppercase tracking-[2px] text-slate-500 font-black">
-                  Total
-                </th>
-
-              </tr>
-
-            </thead>
-
-            <tbody>
-
-              {sales.length > 0 ? (
-
-                sales.map((sale) => (
-
-                  <tr
-                    key={sale.id}
-                    className="border-b border-white/5 hover:bg-white/[0.03] transition"
-                  >
-
-                    {/* CLIENTE */}
-                    <td className="p-5">
-
-                      <div className="flex items-center gap-4">
-
-                        <div className="h-12 w-12 rounded-2xl bg-blue-500/10 flex items-center justify-center">
-                          <ShieldCheck
-                            size={20}
-                            className="text-blue-400"
-                          />
-                        </div>
-
-                        <div>
-
-                          <p className="font-bold text-white">
-                            {sale.customerName ||
-                              "Cliente General"}
-                          </p>
-
-                          <div className="flex items-center gap-1 text-sm text-slate-500 mt-1">
-
-                            <ChevronRight size={14} />
-
-                            Venta #
-                            {sale.id}
-
-                          </div>
-
-                        </div>
-
-                      </div>
-
-                    </td>
-
-                    {/* PRODUCTOS */}
-                    <td className="p-5 text-center">
-
-                      <span className="inline-flex items-center justify-center rounded-2xl bg-purple-500/10 px-4 py-2 text-purple-400 font-bold">
-
-                        {(sale.details || []).reduce(
-                          (
-                            acc: number,
-                            item: any
-                          ) =>
-                            acc +
-                            Number(
-                              item.quantity || 0
-                            ),
-                          0
-                        )}
-
-                      </span>
-
-                    </td>
-
-                    {/* FECHA */}
-                    <td className="p-5 text-center text-slate-400 font-medium">
-
-                      {new Date(
-                        sale.createdAt
-                      ).toLocaleDateString(
-                        "es-PE"
-                      )}
-
-                    </td>
-
-                    {/* TOTAL */}
-                    <td className="p-5 text-right">
-
-                      <span className="text-emerald-400 text-xl font-black">
-                        S/{" "}
-                        {Number(
-                          sale.total || 0
-                        ).toFixed(2)}
-                      </span>
-
-                    </td>
-
-                  </tr>
-
-                ))
-
-              ) : (
-
-                <tr>
-
-                  <td
-                    colSpan={4}
-                    className="text-center p-16 text-slate-500"
-                  >
-
-                    <div className="flex flex-col items-center gap-3">
-
-                      <ReceiptText size={40} />
-
-                      No hay ventas registradas
-
-                    </div>
-
-                  </td>
-
-                </tr>
-
-              )}
-
-            </tbody>
-
-          </table>
 
         </div>
 

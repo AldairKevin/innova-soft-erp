@@ -1,5 +1,6 @@
 import Sidebar from "@/components/Sidebar";
 import { getUser } from "@/lib/get-user";
+import { prisma } from "@/lib/prisma";
 
 export default async function DashboardLayout({
   children,
@@ -7,6 +8,12 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }) {
   const user = await getUser();
+
+  const business = await prisma.business.findUnique({
+    where: {
+      id: 1,
+    },
+  });
 
   return (
     <div className="min-h-screen bg-[#020617] text-white flex overflow-hidden">
@@ -24,7 +31,7 @@ export default async function DashboardLayout({
 
           <div>
             <h1 className="text-2xl font-black">
-              InnovaSoft ERP 🚀
+              {business?.name || "InnovaSoft ERP"} 🚀
             </h1>
 
             <p className="text-slate-400 text-sm mt-1">
