@@ -12,7 +12,7 @@ export async function getSalesSummary() {
     if (sales.length === 0) return { totalRevenue: 0, todayRevenue: 0, topProducts: [] };
 
     // 2. Suma total de dinero
-    const total = sales.reduce((acc, s) => acc + s.total, 0);
+    const total = sales.reduce((acc, s) => acc + Number(s.total), 0);
 
     // 3. Agrupar cantidades por ID de producto
     const mapping: Record<string, number> = {};
