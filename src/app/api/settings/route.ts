@@ -1,10 +1,5 @@
 import { NextResponse } from "next/server";
-
 import { prisma } from "@/lib/prisma";
-
-//
-// GET SETTINGS
-//
 
 export async function GET() {
   try {
@@ -13,33 +8,29 @@ export async function GET() {
     return NextResponse.json(settings);
   } catch (error) {
     return NextResponse.json(
-      {
-        error: "Error obteniendo configuración",
-      },
-      {
-        status: 500,
-      }
+      { error: "Error obteniendo configuración" },
+      { status: 500 }
     );
   }
 }
-
-//
-// UPDATE SETTINGS
-//
 
 export async function PUT(req: Request) {
   try {
     const body = await req.json();
 
     const updated = await prisma.settings.update({
-      where: {
-        id: 1,
-      },
-
+      where: { id: 1 },
       data: {
         primaryColor: body.primaryColor,
         darkMode: body.darkMode,
-        notifications: body.notifications,
+
+        // 🔥 MEJORA IMPORTANTE (evita crash si viene undefined)
+        notifications: body.notifications ?? {
+          email: true,
+          stock: true,
+          sales: false,
+        },
+
         currency: body.currency,
         igv: body.igv,
         facturaSerie: body.facturaSerie,
@@ -50,12 +41,8 @@ export async function PUT(req: Request) {
     return NextResponse.json(updated);
   } catch (error) {
     return NextResponse.json(
-      {
-        error: "Error actualizando configuración",
-      },
-      {
-        status: 500,
-      }
+      { error: "Error actualizando configuración" },
+      { status: 500 }
     );
   }
 }
