@@ -26,28 +26,17 @@ async function getData(token: string) {
 }
 
 export default async function DashboardPage() {
-  let token: string | undefined = undefined;
+  // 1. En Next.js 15 usamos await cookies() directamente, sin try/catch, 
+  // para no bloquear el enrutamiento dinámico interno del framework.
+  const cookieStore = await cookies();
+  const token = cookieStore.get("token")?.value;
 
-  try {
-    // Leemos las cookies de forma compatible (funcione como promesa o como función directa)
-    const cookieStore = cookies();
-    
-    // Si maneja la API moderna asíncrona, resolvemos la promesa; si no, extraemos el valor directo
-    if (cookieStore instanceof Promise) {
-      const resolvedStore = await cookieStore;
-      token = resolvedStore.get("token")?.value;
-    } else {
-      token = cookieStore.get("token")?.value;
-    }
-  } catch (cookieError) {
-    console.error("🚨 Error crítico al leer cookies en el servidor:", cookieError);
-  }
-
-  // Si el token no existe o está vacío, redirigimos limpiamente al Login
-  if (!token || token === "undefined" || token.trim() === "") {
+  // 2. Si no hay token, redirect() lanza una excepción controlada por Next.js
+  if (!token || token.trim() === "") {
     redirect("/login");
   }
 
+  // 3. Protegemos SOLO nuestra obtención de datos para evitar la pantalla gris en móviles
   try {
     const data = await getData(token);
     return <DashboardClient data={data} />;
@@ -60,7 +49,7 @@ export default async function DashboardPage() {
           Sesión inválida o expirada
         </h2>
         <p style={{ color: "#4b5563", marginBottom: "20px" }}>
-          Hubo un problema al autenticar tu dispositivo. Por favor, vuelve a iniciar sesión.
+          Hubo un problema de conexión con el dispositivo. Por favor, vuelve a iniciar sesión.
         </p>
         <a 
           href="/login" 
