@@ -4,48 +4,58 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 
 export async function POST(req: Request) {
-  const { email, password } = await req.json();
+  try {
+    const { email, password } = await req.json();
 
-  const user = await prisma.user.findUnique({
-    where: { email },
-  });
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
 
-  if (!user) {
+    if (!user) {
+      return NextResponse.json(
+        { message: "Usuario no encontrado" },
+        { status: 404 }
+      );
+    }
+
+    const isValid = await bcrypt.compare(password, user.password);
+
+    if (!isValid) {
+      return NextResponse.json(
+        { message: "Contraseña incorrecta" },
+        { status: 401 }
+      );
+    }
+
+    const token = jwt.sign(
+      {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+      process.env.JWT_SECRET!,
+      { expiresIn: "7d" }
+    );
+
+    const response = NextResponse.json({
+      message: "Login exitoso",
+    });
+
+    response.cookies.set("token", token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "lax",
+      path: "/",
+    });
+
+    return response;
+  } catch (error) {
+    console.log(error);
+
     return NextResponse.json(
-      { message: "Usuario no encontrado" },
-      { status: 404 }
+      { message: "Error interno del servidor" },
+      { status: 500 }
     );
   }
-
-  const isValid = await bcrypt.compare(password, user.password);
-
-  if (!isValid) {
-    return NextResponse.json(
-      { message: "Contraseña incorrecta" },
-      { status: 401 }
-    );
-  }
-
-  // 🔥 AQUÍ ESTÁ LO IMPORTANTE
-  const token = jwt.sign(
-    {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role, // 🔥 ESTO ES CLAVE
-    },
-    process.env.JWT_SECRET!,
-    { expiresIn: "7d" }
-  );
-
-  const response = NextResponse.json({ message: "Login exitoso" });
-
-  response.cookies.set("token", token, {
-    httpOnly: true,
-    secure: true,
-    sameSite: "lax",
-    path: "/",
-  });
-
-  return response;
 }
