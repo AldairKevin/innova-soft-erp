@@ -7,45 +7,68 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+//
+// PRODUCTOS
+//
+
 model Product {
-  id        Int      @id @default(autoincrement())
-  name      String
-  price     Decimal
-  stock     Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          Int          @id @default(autoincrement())
+  name        String
+  price       Decimal      @db.Decimal(10, 2)
+  stock       Int
+
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 
   saleDetails SaleDetail[]
 }
 
-model Sale {
-  id           Int      @id @default(autoincrement())
-  customerName String
-  total        Decimal
-  createdAt    DateTime @default(now())
+//
+// VENTAS
+//
 
-  details SaleDetail[]
+model Sale {
+  id           Int          @id @default(autoincrement())
+
+  customerName String
+
+  total        Decimal      @db.Decimal(10, 2)
+
+  createdAt    DateTime     @default(now())
+
+  details      SaleDetail[]
 }
 
 model SaleDetail {
-  id Int @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
 
   saleId    Int
   productId Int
 
-  quantity Int
-  price    Decimal
+  quantity  Int
 
-  sale    Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id])
+  price     Decimal  @db.Decimal(10, 2)
+
+  sale      Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+
+  product   Product  @relation(fields: [productId], references: [id])
 }
+
+//
+// USUARIOS
+//
 
 model User {
   id        Int      @id @default(autoincrement())
+
   name      String
+
   email     String   @unique
+
   password  String
+
   role      Role     @default(USER)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -56,34 +79,49 @@ enum Role {
 }
 
 //
-// CONFIGURACIÓN GENERAL
+// EMPRESA
 //
 
 model Business {
-  id      Int     @id @default(1)
-  name    String
-  ruc     String?
-  address String?
-  phone   String?
-  email   String?
-  logo    String?
+  id          Int      @id @default(1)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  name        String
+
+  ruc         String?
+
+  address     String?
+
+  phone       String?
+
+  email       String?
+
+  logo        String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
+//
+// CONFIGURACIÓN
+//
+
 model Settings {
-  id Int @id @default(1)
+  id            Int      @id @default(1)
 
-  primaryColor String  @default("#2563eb")
-  darkMode     Boolean @default(false)
+  primaryColor  String   @default("#2563eb")
+  darkMode      Boolean  @default(true)
 
-  currency String @default("PEN")
-  igv      Float  @default(18)
+  notifications Json?
 
-  facturaSerie String @default("F001")
-  boletaSerie  String @default("B001")
+  currency      String   @default("PEN")
+  igv           Float    @default(18)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  facturaSerie  String   @default("F001")
+  boletaSerie   String   @default("B001")
+
+  timezone      String   @default("America/Lima")
+  language      String   @default("es")
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }

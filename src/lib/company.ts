@@ -1,10 +1,7 @@
-import pool from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 
 export async function getCompany() {
-  const result = await pool.query(`
-    SELECT * FROM company
-    LIMIT 1
-  `);
-
-  return result.rows[0];
+  // Cambiado de prisma.company a prisma.business
+  const result = await prisma.business.findFirst(); 
+  return result;
 }
