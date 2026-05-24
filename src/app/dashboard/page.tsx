@@ -3,12 +3,15 @@ import { redirect } from "next/navigation";
 import DashboardClient from "@/components/dashboard-client";
 
 async function getData(token: string) {
-  const res = await fetch("http://localhost:3000/api/dashboard", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    cache: "no-store",
-  });
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboard`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      cache: "no-store",
+    }
+  );
 
   if (!res.ok) {
     throw new Error("Error al obtener datos del dashboard");
