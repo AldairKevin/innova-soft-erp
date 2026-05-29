@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-
 import {
   Search,
   ShoppingCart,
@@ -9,6 +8,8 @@ import {
   CreditCard,
   Package,
   Plus,
+  User,
+  FileText,
 } from "lucide-react";
 
 type Product = {
@@ -23,17 +24,16 @@ type CartItem = Product & {
 };
 
 export default function POSPage() {
-  const [products, setProducts] =
-    useState<Product[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const [cart, setCart] =
-    useState<CartItem[]>([]);
-
-  const [search, setSearch] =
-    useState("");
-
-  const [loading, setLoading] =
-    useState(false);
+  // 🔥 CLIENTE
+  const [customerName, setCustomerName] = useState("Cliente");
+  const [documentType, setDocumentType] = useState("DNI");
+  const [document, setDocument] = useState("99999999");
+  const [address, setAddress] = useState("Lima");
 
   useEffect(() => {
     fetch("/api/products")
@@ -43,68 +43,42 @@ export default function POSPage() {
 
   const filteredProducts = useMemo(() => {
     return products.filter((p) =>
-      p.name
-        .toLowerCase()
-        .includes(search.toLowerCase())
+      p.name.toLowerCase().includes(search.toLowerCase())
     );
   }, [products, search]);
 
   const addToCart = (product: Product) => {
-    const exist = cart.find(
-      (p) => p.id === product.id
-    );
+    const exist = cart.find((p) => p.id === product.id);
 
     if (exist) {
       setCart(
         cart.map((p) =>
           p.id === product.id
-            ? {
-                ...p,
-                quantity: p.quantity + 1,
-              }
+            ? { ...p, quantity: p.quantity + 1 }
             : p
         )
       );
     } else {
-      setCart([
-        ...cart,
-        {
-          ...product,
-          quantity: 1,
-        },
-      ]);
+      setCart([...cart, { ...product, quantity: 1 }]);
     }
   };
 
-  const updateQty = (
-    id: number,
-    qty: number
-  ) => {
+  const updateQty = (id: number, qty: number) => {
     if (qty <= 0) return;
 
     setCart(
       cart.map((p) =>
-        p.id === id
-          ? { ...p, quantity: qty }
-          : p
+        p.id === id ? { ...p, quantity: qty } : p
       )
     );
   };
 
   const removeItem = (id: number) => {
-    setCart(
-      cart.filter((p) => p.id !== id)
-    );
+    setCart(cart.filter((p) => p.id !== id));
   };
 
   const total = cart.reduce(
-    (acc, item) =>
-      acc + item.price * item.quantity,
-    0
-  );
-
-  const items = cart.reduce(
-    (acc, item) => acc + item.quantity,
+    (acc, item) => acc + item.price * item.quantity,
     0
   );
 
@@ -114,33 +88,47 @@ export default function POSPage() {
     try {
       setLoading(true);
 
-      const res = await fetch(
-        "/api/sales",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-          body: JSON.stringify({
-            items: cart,
-            customerName: "Cliente",
-          }),
-        }
-      );
+      const res = await fetch("/api/sales", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+
+        body: JSON.stringify({
+          items: cart,
+          customerName,
+          document,
+          address,
+          documentType,
+        }),
+      });
 
       const sale = await res.json();
 
       if (!res.ok) {
-        throw new Error(sale.message);
+        throw new Error(
+          sale.error ||
+            sale.message ||
+            "Error procesando venta"
+        );
+      }
+
+      if (!sale?.saleId) {
+        throw new Error("No se generó saleId");
       }
 
       window.open(
-        `/api/ticket?saleId=${sale.id}`,
+        `/api/ticket?saleId=${sale.saleId}`,
         "_blank"
       );
 
+      // 🔥 LIMPIAR CARRITO
       setCart([]);
+
+      // 🔥 RESET CLIENTE
+      setCustomerName("Cliente");
+      setDocument("99999999");
+      setAddress("Lima");
 
     } catch (error: any) {
       alert(error.message);
@@ -161,8 +149,7 @@ export default function POSPage() {
           </h1>
 
           <p className="text-slate-400 mt-2">
-            Gestiona ventas rápidas y
-            profesionales 🚀
+            Gestiona ventas rápidas y profesionales 🚀
           </p>
         </div>
 
@@ -189,7 +176,6 @@ export default function POSPage() {
           </div>
 
         </div>
-
       </div>
 
       {/* MAIN */}
@@ -198,215 +184,237 @@ export default function POSPage() {
         {/* PRODUCTS */}
         <div className="xl:col-span-2 bg-slate-950 border border-slate-800 rounded-3xl p-6 shadow-2xl">
 
+          {/* CLIENTE */}
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 mb-6">
+
+            <div className="flex items-center gap-2 mb-5">
+              <User className="text-cyan-400" />
+              <h2 className="text-xl font-bold">
+                Datos del Cliente
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+              {/* NOMBRE */}
+              <div>
+                <label className="text-sm text-slate-400 mb-2 block">
+                  Nombre / Razón Social
+                </label>
+
+                <input
+                  type="text"
+                  value={customerName}
+                  onChange={(e) =>
+                    setCustomerName(e.target.value)
+                  }
+                  placeholder="Cliente"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-2xl px-4 py-3"
+                />
+              </div>
+
+              {/* TIPO DOC */}
+              <div>
+                <label className="text-sm text-slate-400 mb-2 block">
+                  Tipo Documento
+                </label>
+
+                <select
+                  value={documentType}
+                  onChange={(e) => {
+                    setDocumentType(e.target.value);
+
+                    if (e.target.value === "DNI") {
+                      setDocument("99999999");
+                    } else {
+                      setDocument("");
+                    }
+                  }}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-2xl px-4 py-3"
+                >
+                  <option value="DNI">DNI</option>
+                  <option value="RUC">RUC</option>
+                </select>
+              </div>
+
+              {/* DOCUMENTO */}
+              <div>
+                <label className="text-sm text-slate-400 mb-2 block">
+                  Número Documento
+                </label>
+
+                <div className="relative">
+                  <FileText
+                    size={18}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"
+                  />
+
+                  <input
+                    type="text"
+                    value={document}
+                    onChange={(e) =>
+                      setDocument(e.target.value)
+                    }
+                    placeholder={
+                      documentType === "DNI"
+                        ? "99999999"
+                        : "20123456789"
+                    }
+                    maxLength={
+                      documentType === "DNI"
+                        ? 8
+                        : 11
+                    }
+                    className="w-full bg-slate-800 border border-slate-700 rounded-2xl pl-12 pr-4 py-3"
+                  />
+                </div>
+              </div>
+
+              {/* DIRECCION */}
+              <div>
+                <label className="text-sm text-slate-400 mb-2 block">
+                  Dirección
+                </label>
+
+                <input
+                  type="text"
+                  value={address}
+                  onChange={(e) =>
+                    setAddress(e.target.value)
+                  }
+                  placeholder="Lima"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-2xl px-4 py-3"
+                />
+              </div>
+
+            </div>
+          </div>
+
           {/* SEARCH */}
           <div className="relative mb-6">
-
             <Search
               size={18}
               className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"
             />
 
             <input
-              type="text"
-              placeholder="Buscar producto..."
               value={search}
-              onChange={(e) =>
-                setSearch(e.target.value)
-              }
-              className="w-full bg-slate-900 border border-slate-800 rounded-2xl pl-12 pr-4 py-4 outline-none focus:border-blue-500 transition"
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar producto..."
+              className="w-full bg-slate-900 border border-slate-800 rounded-2xl pl-12 pr-4 py-4"
             />
-
           </div>
 
-          {/* PRODUCT GRID */}
+          {/* PRODUCTS GRID */}
           <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-5">
 
             {filteredProducts.map((p) => (
               <button
                 key={p.id}
-                onClick={() =>
-                  addToCart(p)
-                }
-                className="group relative overflow-hidden text-left bg-slate-900 border border-slate-800 hover:border-blue-500/40 rounded-3xl p-5 transition-all duration-300 hover:scale-[1.02]"
+                onClick={() => addToCart(p)}
+                className="bg-slate-900 border border-slate-800 rounded-3xl p-5 text-left hover:border-cyan-500 transition"
               >
 
-                <div className="absolute top-0 right-0 w-28 h-28 bg-blue-500/10 blur-3xl rounded-full" />
+                <div className="flex justify-between mb-4">
+                  <Package />
 
-                <div className="relative z-10">
+                  <span className="text-emerald-400 text-sm">
+                    Stock {p.stock}
+                  </span>
+                </div>
 
-                  <div className="flex items-center justify-between mb-5">
+                <h2 className="text-white font-bold">
+                  {p.name}
+                </h2>
 
-                    <div className="w-14 h-14 rounded-2xl bg-blue-500/10 text-blue-400 flex items-center justify-center">
-                      <Package size={26} />
-                    </div>
+                <p className="text-2xl font-black mt-2">
+                  S/ {p.price}
+                </p>
 
-                    <div className="bg-emerald-500/10 text-emerald-400 text-xs px-3 py-1 rounded-full border border-emerald-500/20">
-                      Stock {p.stock}
-                    </div>
-
-                  </div>
-
-                  <h2 className="text-lg font-bold text-white">
-                    {p.name}
-                  </h2>
-
-                  <p className="text-3xl font-black mt-3 text-white">
-                    S/ {p.price}
-                  </p>
-
-                  <div className="mt-5 flex items-center justify-between">
-
-                    <span className="text-sm text-slate-400">
-                      Click para agregar
-                    </span>
-
-                    <div className="w-10 h-10 rounded-xl bg-blue-500 text-white flex items-center justify-center">
-                      <Plus size={18} />
-                    </div>
-
-                  </div>
-
+                <div className="mt-4 flex justify-end">
+                  <Plus />
                 </div>
 
               </button>
             ))}
 
           </div>
-
         </div>
 
         {/* CART */}
-        <div className="bg-slate-950 border border-slate-800 rounded-3xl p-6 shadow-2xl flex flex-col">
+        <div className="bg-slate-950 border border-slate-800 rounded-3xl p-6 flex flex-col">
 
-          {/* TITLE */}
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex justify-between mb-6">
+            <h2 className="text-2xl font-black">
+              Carrito
+            </h2>
 
-            <div>
-              <h2 className="text-2xl font-black">
-                Carrito
-              </h2>
-
-              <p className="text-slate-400 text-sm mt-1">
-                {items} productos agregados
-              </p>
-            </div>
-
-            <div className="w-14 h-14 rounded-2xl bg-blue-500/10 text-blue-400 flex items-center justify-center">
-              <ShoppingCart size={24} />
-            </div>
-
+            <ShoppingCart />
           </div>
 
-          {/* ITEMS */}
-          <div className="flex-1 space-y-4 overflow-auto pr-1">
+          <div className="flex-1 space-y-4 overflow-auto">
 
             {cart.length === 0 && (
-              <div className="h-full flex flex-col items-center justify-center text-center py-20">
-
-                <ShoppingCart
-                  size={50}
-                  className="text-slate-700"
-                />
-
-                <p className="text-slate-500 mt-4">
-                  El carrito está vacío
-                </p>
-
-              </div>
+              <p className="text-slate-500 text-center">
+                Carrito vacío
+              </p>
             )}
 
             {cart.map((item) => (
               <div
                 key={item.id}
-                className="bg-slate-900 border border-slate-800 rounded-2xl p-4"
+                className="bg-slate-900 p-4 rounded-2xl"
               >
 
-                <div className="flex items-start justify-between gap-3">
+                <div className="flex justify-between">
 
-                  <div className="flex-1">
+                  <div>
+                    <p>{item.name}</p>
 
-                    <h3 className="font-semibold">
-                      {item.name}
-                    </h3>
-
-                    <p className="text-sm text-slate-400 mt-1">
-                      S/ {item.price} c/u
+                    <p className="text-sm text-slate-400">
+                      S/ {item.price}
                     </p>
-
-                    <div className="flex items-center gap-3 mt-4">
-
-                      <input
-                        type="number"
-                        min={1}
-                        value={item.quantity}
-                        onChange={(e) =>
-                          updateQty(
-                            item.id,
-                            Number(
-                              e.target.value
-                            )
-                          )
-                        }
-                        className="w-20 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 outline-none"
-                      />
-
-                      <button
-                        onClick={() =>
-                          removeItem(item.id)
-                        }
-                        className="w-10 h-10 rounded-xl bg-red-500/10 text-red-400 flex items-center justify-center hover:bg-red-500 hover:text-white transition"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-
-                    </div>
-
                   </div>
 
-                  <div className="text-right">
-
-                    <p className="text-lg font-bold">
-                      S/{" "}
-                      {(
-                        item.price *
-                        item.quantity
-                      ).toFixed(2)}
-                    </p>
-
-                  </div>
+                  <button
+                    onClick={() => removeItem(item.id)}
+                  >
+                    <Trash2 />
+                  </button>
 
                 </div>
+
+                <input
+                  type="number"
+                  value={item.quantity}
+                  onChange={(e) =>
+                    updateQty(
+                      item.id,
+                      Number(e.target.value)
+                    )
+                  }
+                  className="mt-3 w-20 bg-slate-800 p-2 rounded"
+                />
 
               </div>
             ))}
 
           </div>
 
-          {/* FOOTER */}
-          <div className="pt-6 mt-6 border-t border-slate-800 space-y-5">
+          <div className="border-t border-slate-800 pt-4 mt-4">
 
-            <div className="flex items-center justify-between">
-
-              <span className="text-slate-400">
-                Total
-              </span>
-
-              <h2 className="text-4xl font-black">
-                S/ {total.toFixed(2)}
-              </h2>
-
+            <div className="flex justify-between text-2xl font-bold">
+              <span>Total</span>
+              <span>S/ {total.toFixed(2)}</span>
             </div>
 
             <button
               onClick={handleCheckout}
-              disabled={
-                loading ||
-                cart.length === 0
-              }
-              className="w-full h-14 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-500 font-bold text-lg flex items-center justify-center gap-3 hover:scale-[1.01] transition-all disabled:opacity-50"
+              disabled={loading || cart.length === 0}
+              className="w-full mt-4 bg-blue-600 hover:bg-blue-700 transition py-4 rounded-2xl flex justify-center items-center gap-2 disabled:opacity-50"
             >
 
-              <CreditCard size={22} />
+              <CreditCard />
 
               {loading
                 ? "Procesando..."
@@ -417,9 +425,7 @@ export default function POSPage() {
           </div>
 
         </div>
-
       </div>
-
     </div>
   );
 }

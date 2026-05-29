@@ -1,103 +1,479 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-/**
- * 📊 GET - Obtener ventas para reportes
- */
-export async function GET() {
-  try {
-    const sales = await prisma.sale.findMany({
-      orderBy: { createdAt: "desc" }, // Cambiado a desc para ver las más recientes primero
-      include: {
-        details: {
-          include: {
-            product: true,
-          },
-        },
-      },
-    });
+// =====================================================================
+// NUBEFACT
+// =====================================================================
 
-    return NextResponse.json(sales);
-  } catch (error) {
-    console.error("Error en GET /api/sales:", error);
-    return NextResponse.json(
-      { message: "Error al obtener ventas" },
-      { status: 500 }
+async function sendToNubefact(
+  payload: any,
+  url: string,
+  token: string
+) {
+  console.log("=== ENVIANDO A NUBEFACT ===");
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Token token="${token}"`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await response.json();
+
+  console.log("=== RESPUESTA NUBEFACT ===", data);
+
+  if (!response.ok || data.errors) {
+    throw new Error(
+      data.errors || data.message || "Error Nubefact"
     );
   }
+
+  return data;
 }
 
-/**
- * 🛒 POST - Crear venta (POS) con validación de stock
- */
-export async function POST(req: Request) {
-  try {
-    const body = await req.json();
-    const { items, customerName = "Cliente General" } = body;
+// =====================================================================
+// POST
+// =====================================================================
 
-    if (!Array.isArray(items) || items.length === 0) {
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+
+    const {
+      items,
+      customerName,
+      document,
+      documentType,
+      address,
+    } = body;
+
+    // ================================================================
+    // VALIDACIONES
+    // ================================================================
+
+    if (!items || items.length === 0) {
       return NextResponse.json(
-        { message: "El carrito está vacío" },
-        { status: 400 }
+        {
+          error: "No hay productos",
+        },
+        {
+          status: 400,
+        }
       );
     }
 
-    // 1. Obtener todos los IDs de los productos para buscarlos de un solo golpe
-    const productIds = items.map((item: any) => Number(item.id));
-    const dbProducts = await prisma.product.findMany({
-      where: { id: { in: productIds } },
-    });
+    const isRuc = documentType === "RUC";
 
-    // 2. Iniciar Transacción
-    const result = await prisma.$transaction(async (tx) => {
-      let totalVenta = 0;
-      const detailsData = [];
+    const invoiceType = isRuc
+      ? "FACTURA"
+      : "BOLETA";
 
-      for (const item of items) {
-        const product = dbProducts.find((p) => p.id === Number(item.id));
+    const serie = isRuc
+      ? "F001"
+      : "B001";
 
-        if (!product) throw new Error(`Producto ID ${item.id} no encontrado`);
-        
-        const quantity = Number(item.quantity);
-        if (quantity <= 0) throw new Error(`Cantidad inválida para ${product.name}`);
-        if (product.stock < quantity) throw new Error(`Stock insuficiente para ${product.name}`);
+    const tipoComprobante = isRuc ? 1 : 2;
 
-        const subtotal = Number(product.price) * quantity;
-        totalVenta += subtotal;
+    const tipoDocumentoCliente = isRuc
+      ? "6"
+      : "1";
 
-        // Preparar datos para los detalles
-        detailsData.push({
-          productId: product.id,
-          quantity: quantity,
-          price: product.price,
+    // ================================================================
+    // TOTALES
+    // ================================================================
+
+    const total = items.reduce(
+      (acc: number, item: any) =>
+        acc + item.price * item.quantity,
+      0
+    );
+
+    const subtotal = Number(
+      (total / 1.18).toFixed(2)
+    );
+
+    const igv = Number(
+      (total - subtotal).toFixed(2)
+    );
+
+    // ================================================================
+    // TRANSACCIÓN
+    // ================================================================
+
+    const result = await prisma.$transaction(
+      async (tx) => {
+
+        // ============================================================
+        // CLIENTE
+        // ============================================================
+
+        const customer =
+          await tx.customer.upsert({
+            where: {
+              document,
+            },
+
+            update: {
+              name: customerName,
+              address,
+              documentType,
+            },
+
+            create: {
+              name: customerName,
+              document,
+              address,
+              documentType,
+            },
+          });
+
+        // ============================================================
+        // SALE
+        // ============================================================
+
+        const sale = await tx.sale.create({
+          data: {
+            customerName,
+            customerDocument: document,
+            customerDocumentType:
+              documentType,
+
+            subtotal,
+            igv,
+            total,
+          },
         });
 
-        // Actualizar stock del producto
-        await tx.product.update({
-          where: { id: product.id },
-          data: { stock: { decrement: quantity } },
+        // ============================================================
+        // SALE DETAILS
+        // ============================================================
+
+        for (const item of items) {
+
+          await tx.saleDetail.create({
+            data: {
+              saleId: sale.id,
+
+              productId: item.id,
+
+              quantity: item.quantity,
+
+              price: item.price,
+
+              subtotal:
+                item.price * item.quantity,
+            },
+          });
+
+          // ========================================================
+          // STOCK
+          // ========================================================
+
+          await tx.product.update({
+            where: {
+              id: item.id,
+            },
+
+            data: {
+              stock: {
+                decrement: item.quantity,
+              },
+            },
+          });
+        }
+
+        // ============================================================
+        // INVOICE
+        // ============================================================
+
+        const invoice =
+          await tx.invoice.create({
+            data: {
+              customerId: customer.id,
+
+              type: invoiceType,
+
+              serie,
+
+              number: sale.id.toString(),
+
+              subtotal,
+
+              igv,
+
+              total,
+
+              status: "PENDING",
+
+              items: {
+                create: items.map(
+                  (item: any) => ({
+                    productId: item.id,
+
+                    quantity: item.quantity,
+
+                    price: item.price,
+
+                    subtotal:
+                      item.price *
+                      item.quantity,
+
+                    igv: Number(
+                      (
+                        item.price *
+                        item.quantity -
+                        item.price *
+                          item.quantity /
+                          1.18
+                      ).toFixed(2)
+                    ),
+
+                    total:
+                      item.price *
+                      item.quantity,
+                  })
+                ),
+              },
+            },
+
+            include: {
+              customer: true,
+              items: true,
+            },
+          });
+
+        return {
+          customer,
+          sale,
+          invoice,
+        };
+      }
+    );
+
+    const {
+      sale,
+      invoice,
+    } = result;
+
+    // ================================================================
+    // NUBEFACT
+    // ================================================================
+
+    try {
+
+      const business =
+        await prisma.business.findFirst();
+
+      if (
+        business?.nubefact_token &&
+        business?.nubefact_url
+      ) {
+
+        const payload = {
+          operacion:
+            "generar_comprobante",
+
+          tipo_de_comprobante:
+            tipoComprobante,
+
+          serie,
+
+          numero:
+            invoice.number,
+
+          sunat_transaction: 1,
+
+          cliente_tipo_de_documento:
+            tipoDocumentoCliente,
+
+          cliente_numero_de_documento:
+            document,
+
+          cliente_denominacion:
+            customerName,
+
+          cliente_direccion:
+            address,
+
+          fecha_de_emision:
+            new Date()
+              .toISOString()
+              .split("T")[0],
+
+          moneda: 1,
+
+          porcentaje_de_igv: 18,
+
+          total_gravada:
+            subtotal,
+
+          total_igv:
+            igv,
+
+          total,
+
+          total_venta:
+            total,
+
+          items: items.map(
+            (item: any) => {
+
+              const itemSubtotal =
+                Number(
+                  (
+                    item.price /
+                    1.18
+                  ).toFixed(2)
+                );
+
+              const itemIgv =
+                Number(
+                  (
+                    item.price -
+                    itemSubtotal
+                  ).toFixed(2)
+                );
+
+              return {
+                unidad_de_medida:
+                  "NIU",
+
+                codigo:
+                  item.id.toString(),
+
+                descripcion:
+                  item.name,
+
+                cantidad:
+                  item.quantity,
+
+                valor_unitario:
+                  itemSubtotal,
+
+                precio_unitario:
+                  item.price,
+
+                descuento: 0,
+
+                subtotal:
+                  itemSubtotal *
+                  item.quantity,
+
+                tipo_de_igv: 1,
+
+                igv:
+                  itemIgv *
+                  item.quantity,
+
+                total:
+                  item.price *
+                  item.quantity,
+              };
+            }
+          ),
+        };
+
+        const nubefactResponse =
+          await sendToNubefact(
+            payload,
+            business.nubefact_url,
+            business.nubefact_token
+          );
+
+        // ============================================================
+        // UPDATE INVOICE
+        // ============================================================
+
+        await prisma.invoice.update({
+          where: {
+            id: invoice.id,
+          },
+
+          data: {
+            status: "COMPLETED",
+
+            sunatStatus:
+              nubefactResponse
+                ?.aceptada_por_sunat
+                ? "ACEPTADO"
+                : "PROCESADO",
+
+            sunatResponse:
+              JSON.stringify(
+                nubefactResponse
+              ),
+
+            pdfUrl:
+              nubefactResponse
+                ?.enlace_del_pdf,
+
+            xmlUrl:
+              nubefactResponse
+                ?.enlace_del_xml,
+
+            cdrUrl:
+              nubefactResponse
+                ?.enlace_del_cdr,
+
+            hash:
+              nubefactResponse?.cadena_para_codigo_qr,
+          },
         });
       }
 
-      // 3. Crear la venta y sus detalles en una sola operación
-      return await tx.sale.create({
-        data: {
-          customerName,
-          total: totalVenta,
-          details: {
-            create: detailsData,
-          },
+    } catch (nubefactError: any) {
+
+      console.error(
+        "ERROR NUBEFACT",
+        nubefactError
+      );
+
+      await prisma.invoice.update({
+        where: {
+          id: invoice.id,
         },
-        include: { details: true },
+
+        data: {
+          status: "ERROR",
+
+          sunatStatus: "ERROR",
+
+          sunatResponse:
+            nubefactError.message,
+        },
       });
+    }
+
+    // ================================================================
+    // RESPUESTA
+    // ================================================================
+
+    return NextResponse.json({
+      success: true,
+
+      saleId: sale.id,
+
+      invoiceId: invoice.id,
     });
 
-    return NextResponse.json(result, { status: 201 });
   } catch (error: any) {
-    console.error("Error en POST /api/sales:", error.message);
+
+    console.error(error);
+
     return NextResponse.json(
-      { message: error.message || "Error al procesar la venta" },
-      { status: 400 } // Cambiado a 400 porque suele ser error de stock o datos
+      {
+        error:
+          "Error procesando venta",
+
+        details:
+          error.message,
+      },
+      {
+        status: 500,
+      }
     );
   }
 }

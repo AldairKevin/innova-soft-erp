@@ -1,76 +1,48 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
-
-import { revalidatePath } from "next/cache";
-
-export async function createSale(data: any) {
-
+export async function createSale(data: {
+  items: any[];
+  customerName?: string;
+  document?: string;
+  address?: string;
+}) {
   try {
-
-    const sale = await prisma.sale.create({
-
-      data: {
-
-        customerName: data.customerName,
-
-        total: data.total,
-
-        details: {
-
-          create: data.items.map((item: any) => ({
-
-            quantity: item.quantity,
-
-            price: Number(item.price),
-
-            productId: item.id,
-
-          })),
-
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/sales`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
+        body: JSON.stringify({
+          items: data.items,
+          customerName: data.customerName || "Cliente",
+          document: data.document || "99999999",
+          address: data.address || "Lima",
+        }),
+      }
+    );
 
-      },
+    const result = await response.json();
 
-    });
-
-    for (const item of data.items) {
-
-      await prisma.product.update({
-
-        where: {
-          id: item.id,
-        },
-
-        data: {
-
-          stock: {
-            decrement: item.quantity,
-          },
-
-        },
-
-      });
-
+    if (!response.ok) {
+      throw new Error(
+        result.error ||
+          result.message ||
+          "Error creando venta"
+      );
     }
 
-    revalidatePath("/dashboard/pos");
-
-    revalidatePath("/dashboard/inventory");
-
-    return {
-      success: true,
-    };
-
-  } catch (error) {
-
+    return result;
+  } catch (error: any) {
+    console.error("ERROR createSale:");
     console.error(error);
 
     return {
       success: false,
-      error: "Error al registrar venta",
+      error:
+        error.message ||
+        "Error procesando venta",
     };
-
   }
-
 }

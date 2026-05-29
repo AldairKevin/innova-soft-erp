@@ -7,121 +7,130 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-//
-// PRODUCTOS
-//
-
-model Product {
-  id          Int          @id @default(autoincrement())
-  name        String
-  price       Decimal      @db.Decimal(10, 2)
-  stock       Int
-
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-
-  saleDetails SaleDetail[]
-}
-
-//
-// VENTAS
-//
-
-model Sale {
-  id           Int          @id @default(autoincrement())
-
-  customerName String
-
-  total        Decimal      @db.Decimal(10, 2)
-
-  createdAt    DateTime     @default(now())
-
-  details      SaleDetail[]
-}
-
-model SaleDetail {
-  id        Int      @id @default(autoincrement())
-
-  saleId    Int
-  productId Int
-
-  quantity  Int
-
-  price     Decimal  @db.Decimal(10, 2)
-
-  sale      Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
-
-  product   Product  @relation(fields: [productId], references: [id])
-}
-
-//
-// USUARIOS
-//
-
-model User {
-  id        Int      @id @default(autoincrement())
-
-  name      String
-
-  email     String   @unique
-
-  password  String
-
-  role      Role     @default(USER)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
+// CORRECCIÓN: Los valores de los enums NO llevan punto y coma
 enum Role {
   ADMIN
   USER
 }
 
-//
-// EMPRESA
-//
-
-model Business {
-  id          Int      @id @default(1)
-
-  name        String
-
-  ruc         String?
-
-  address     String?
-
-  phone       String?
-
-  email       String?
-
-  logo        String?
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+enum DocumentType {
+  DNI
+  RUC
+  CE
 }
 
-//
-// CONFIGURACIÓN
-//
+enum InvoiceStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+  ERROR
+}
+
+enum InvoiceType {
+  FACTURA
+  BOLETA
+  NOTA_CREDITO
+  NOTA_DEBITO
+}
+
+model Product {
+  id           Int           @id @default(autoincrement())
+  name         String
+  description  String?
+  barcode      String?       @unique
+  price        Decimal       @db.Decimal(10, 2)
+  cost         Decimal?      @db.Decimal(10, 2)
+  stock        Int           @default(0)
+  active       Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  invoiceItems InvoiceItem[]
+}
+
+model Customer {
+  id           Int          @id @default(autoincrement())
+  name         String
+  document     String       @unique
+  documentType DocumentType @default(DNI)
+  address      String?
+  phone        String?
+  email        String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  invoices     Invoice[]
+}
+
+model Invoice {
+  id           Int           @id @default(autoincrement())
+  customerId   Int
+  type         InvoiceType   @default(BOLETA)
+  serie        String
+  number       Int
+  
+  // Si no tienes un modelo "Sale", añade esto para vincularlo a tu histórico
+  saleId       Int?          @unique 
+
+  taxedAmount  Decimal       @default(0) @db.Decimal(10, 2)
+  igv          Decimal       @default(0) @db.Decimal(10, 2)
+  total        Decimal       @default(0) @db.Decimal(10, 2)
+  
+  status       InvoiceStatus @default(PENDING)
+  sunatStatus  String?
+  sunatResponse Json?
+  hash         String?
+  pdfUrl       String?
+  
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  customer     Customer      @relation(fields: [customerId], references: [id])
+  items        InvoiceItem[]
+
+  @@unique([serie, number])
+  @@index([customerId])
+}
+
+model InvoiceItem {
+  id        Int     @id @default(autoincrement())
+  invoiceId Int
+  productId Int
+  quantity  Int
+  price     Decimal @db.Decimal(10, 2)
+  subtotal  Decimal @db.Decimal(10, 2)
+  igv       Decimal @db.Decimal(10, 2)
+  total     Decimal @db.Decimal(10, 2)
+
+  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id])
+
+  @@index([invoiceId])
+}
+
+model Business {
+  id             Int      @id @default(1)
+  name           String
+  ruc            String   @unique
+  address        String?
+  district       String?
+  city           String?
+  nubefact_token String?
+  nubefact_url   String?
+  createdAt      DateTime @default(now())
+}
+
+model User {
+  id       Int    @id @default(autoincrement())
+  name     String
+  email    String @unique
+  password String
+  role     Role   @default(USER)
+}
 
 model Settings {
-  id            Int      @id @default(1)
-
-  primaryColor  String   @default("#2563eb")
-  darkMode      Boolean  @default(true)
-
-  notifications Json?
-
-  currency      String   @default("PEN")
-  igv           Float    @default(18)
-
-  facturaSerie  String   @default("F001")
-  boletaSerie   String   @default("B001")
-
-  timezone      String   @default("America/Lima")
-  language      String   @default("es")
-
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id           Int      @id @default(1)
+  igv          Float    @default(18)
+  facturaSerie String   @default("F001")
+  boletaSerie  String   @default("B001")
+  ticketFooter String?
+  updatedAt    DateTime @updatedAt
 }
